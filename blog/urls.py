@@ -12,10 +12,13 @@ from django.conf.urls.i18n import i18n_patterns
 from search import views as search_views
 from .api import api_router
 
+from images import views
+from django.views.i18n import JavaScriptCatalog
+
+
 
 urlpatterns = [
     path("django-admin/", admin.site.urls),
-    path("admin/", include(wagtailadmin_urls)),
     path("documents/", include(wagtaildocs_urls)),
     re_path(r'^images/([^/]*)/(\d*)/([^/]*)/[^/]*$', ServeView.as_view(), name='wagtailimages_serve'),
     path("api/v2/", api_router.urls),
@@ -33,6 +36,10 @@ if settings.DEBUG:
 
 urlpatterns += i18n_patterns(
     path("search/", search_views.search, name="search"),
+    path("admin/", include(wagtailadmin_urls)),
+    re_path(r'^comments/', include('django_comments_xtd.urls')),
+    path(r'jsi18n/', JavaScriptCatalog.as_view(), name='javascript-catalog'),
+    path("plot/", views.plot, name="plot"),
     path("", include(wagtail_urls)),
 )
 

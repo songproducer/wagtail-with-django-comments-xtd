@@ -8,34 +8,46 @@
         One template variable is needed.
         No language detection required.
     {% endcomment %}
-    <h1>{{ page.title }}</h1>
 
+    
+    <div class="relative isolate px-6 pt-14 lg:px-8">
+        <div class="mx-auto max-w-2xl py-32">
+            <article class="prose lg:prose-xl">
+                <h1>{{ page.title }}</h1>
+                {% for block in page.stream %}
+                    {% if block.block_type == 'embed' %}
+                    <div class="mx-auto max-w-2xl py-8">
+                        {{ block }}
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </article>
 
-    {{ page.cta_url.url }}
+            {# This is the long way #}
+            {% if page.cta_url or page.cta_external_url %}
+                {% if page.cta_url %}
+                    <a href="{{ page.cta_url.url }}">
+                        {{ page.cta_url.title }}
+                    </a>
+                {% else %}
+                    <a href="{{ page.cta_external_url }}">
+                        Some website
+                    </a>
+                {% endif %}
+            {% endif %}
 
-
-{% comment %}
-    {# This is the long way #}
-    {% if page.cta_url or page.cta_external_url %}
-        {% if page.cta_url %}
-            <a href="{{ page.cta_url.url }}">
-                {{ page.cta_url.title }}
+            {# This is the short way using a custom @property #}
+            {% if page.get_cta_url %}
+            <a href="{{ page.get_cta_url }}">
+                {{ page.get_cta_title }}
             </a>
-        {% else %}
-            <a href="{{ page.cta_external_url }}">
-                Some website
-            </a>
-        {% endif %}
-    {% endif %}
+            {% endif %}
 
-    {# This is the short way using a custom @property #}
-    {% if page.get_cta_url %}
-        {{ page.get_cta_url }}
-    {% endif %}
-
-    {# How to loop through an Orderable/InlinePanel #}
-    {% for orderable_object in page.gallery_images.all %}
-        {{ orderable_object.image }}<br>
-    {% endfor %} {% endcomment %}
+            {# How to loop through an Orderable/InlinePanel #}
+            {% for orderable_object in page.gallery_images.all %}
+                {{ orderable_object.image }}<br>
+            {% endfor %}
+        </div>
+    </div>
 
 {% endblock content %}

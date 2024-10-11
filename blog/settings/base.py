@@ -25,6 +25,13 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 INSTALLED_APPS = [
     "home",
+    "django_comments_xtd",
+    "django_comments",
+    "mathfilters",
+    "plottings",
+    "yfinance",
+    "wagtailmodelchooser",
+    "wagtailcharts",
     "search",
     "images",
     "documents",
@@ -59,6 +66,7 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "django.contrib.sitemaps",
+    "django.contrib.sites",
 ]
 
 MIDDLEWARE = [
@@ -200,3 +208,9 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 WAGTAIL_FRONTEND_LOGIN_TEMPLATE = 'login.html'
 # Set the default password_required.html page
 PASSWORD_REQUIRED_TEMPLATE = 'password_required.html'
+WAGTAILEMBEDS_RESPONSIVE_HTML = True
+
+SITE_ID = 1
+COMMENTS_APP = 'django_comments_xtd'
+COMMENTS_XTD_MAX_THREAD_LEVEL = 2
+

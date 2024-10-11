@@ -1,24 +1,67 @@
 {% extends "base.html" %}
-{% load wagtailcore_tags wagtail_cache %}
+{% load wagtailcore_tags wagtail_cache comments_xtd comments wagtailcharts_tags %}
 
 {% block content %}
 
     {# This is preview-aware #}
-    {% wagtailpagecache 500 "title-cache" %}
-        <h1>
-            {{ page.title }}
-        </h1>
-    {% endwagtailpagecache %}
+    <div class="relative isolate px-6 pt-14 lg:px-8">
+        <div class="mx-auto max-w-2xl py-16">
+            <article class="prose lg:prose-xl">
+                {% wagtailpagecache 500 "title-cache" %}
+                <h1>
+                    {{ page.title }}
+                </h1>
 
-    {# This is preview-aware PLUS page.id+site.id aware #}
-    {% wagtailpagecache 500 "streamfields" %}
-        {% for block in page.body %}
-            {% include_block page.body %}
-        {% endfor %}
-    {% endwagtailpagecache %}
+                
+                
 
-    {# Use `self.author` from the Page inside of `author_dark_mode.html` as `object` #}
-    {% include "includes/author_dark_mode.html" with object=self.author %}
+                {% endwagtailpagecache %}
 
+
+                {% include_block page.body|richtext %}
+
+                {% for block in page.stream %}
+                        <div class="mx-auto max-w-2xl py-8">
+                            {{ block }}
+                        </div>
+                {% endfor %}
+            </article>
+            {% render_comment_form for page %}
+
+
+            <div class="pb-3">
+            <p class="small text-center">{{ page.publish|date:"l, j F Y" }}</p>
+            </div>
+
+            {% get_comment_count for page as comment_count %}
+            <div class="py-4 text-center">
+            <a href="{% pageurl blog_index %}">Back to the Blog</a>
+            &nbsp;&sdot;&nbsp;
+            {{ comment_count }} comment{{ comment_count|pluralize }}
+            ha{{ comment_count|pluralize:"s,ve"}} been posted.
+            </div>
+
+            {% if page.allow_comments %}
+            <div class="comment mt-3 mb-5">
+            <h4 class="text-center mb-4">Your comment</h4>
+            <div class="card pt-4">
+                {% render_comment_form for page %}
+            </div>
+            </div>
+            {% endif %}
+
+            {% if comment_count %}
+            <ul class="media-list">
+            {% render_xtdcomment_tree for page %}
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+    {# Use `self.author` from the Page inside of `author_dark_mode.html` as `page` #}
+    {% include "includes/author_dark_mode.html" with page=self.author %}
+
+
+
+    {% render_charts %}
 
 {% endblock %}

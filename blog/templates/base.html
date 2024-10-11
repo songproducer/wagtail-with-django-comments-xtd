@@ -26,21 +26,24 @@
         {# Global stylesheets #}
         <link rel="stylesheet" type="text/css" href="{% static 'css/main.css' %}">
 
+        <script src="https://kit.fontawesome.com/b8d9e0a441.js" crossorigin="anonymous"></script>
+
+
         {% block extra_css %}
         {# Override this in templates to add extra stylesheets #}
         {% endblock %}
     </head>
 
     <body class="{% block body_class %}{% endblock %}">
-
-        <header>
-            <a href="/">Home</a>
-            {% for menu_page in navbar_pages %}
-                <a href="{{ menu_page.url }}">
-                    {{ menu_page.title}}
-                </a>
-            {% endfor %}
-        </header>
+            <header>
+                <a href="/">Home</a>
+                {% for menu_page in navbar_pages %}
+                &nbsp|&nbsp
+                    <a href="{{ menu_page.url }}">
+                        {{ menu_page.title}}
+                    </a>
+                {% endfor %}
+            </header>
 
         {% wagtailuserbar %}
 
@@ -67,13 +70,14 @@
                 {% endif %}
             {% endwith %}
 
-            <strong>Facebook URL:</strong>
-            {% with facebook_url=settings.site_settings.SocialMediaLinks.facebook %}
-                {% if facebook_url %}
-                    <a href="{{ facebook_url }}">Facebook</a>
-                {% endif %}
-            {% endwith %}
-
+            <!-- <strong>Facebook URL:</strong> -->
+            {% comment %}
+                {% with facebook_url=settings.site_settings.SocialMediaLinks.facebook %}
+                    {% if facebook_url %}
+                        <a href="{{ facebook_url }}">Facebook</a>
+                    {% endif %}
+                {% endwith %}
+            {% endcomment %}
 
         {% endblock footer %}
 

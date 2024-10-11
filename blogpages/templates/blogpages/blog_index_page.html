@@ -1,34 +1,118 @@
 {% extends "base.html" %}
-{% load wagtailcore_tags wagtailroutablepage_tags %}
+{% load wagtailcore_tags wagtailroutablepage_tags mathfilters wagtailimages_tags %}
+
 
 {% block content %}
-
-    {% comment %}
-        {% routablepageurl page "all" %} This goes to /blog/all/
-        {% routablepageurl page "tag" tag="cats" %} This goes to /blog/tag/cats/
-    {% endcomment %}
-
-    <a href='{% routablepageurl page "tag" tag="cats" %}'>
+{% comment %}
+    <a href="{% routablepageurl page 'tag' tag='cats' %}">
         View blog posts filtered by Cat
     </a>
+    <a href="{% routablepageurl page 'all' %}"> This goes to /blog/all/</a>
+{% endcomment %}
 
-    <h1>{{ page.title }}</h1>
-    <h3>{{ page.subtitle }}</h3>
+<div class="relative isolate px-6 pt-14 lg:px-8">
+    <div class="mx-auto max-w-2xl py-32">
+        <article class="prose lg:prose-xl">
+            <h1>{{ page.title }}</h1>
+            <hr>
+            {{ page.body|richtext }}
+        </article>
+        {# Only show pagination if there is more than one page to click through #}
+    {% if posts.paginator.num_pages > 1 %}
+        <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between"></div>
+            <div>
+            <p class="text-sm text-gray-700">
+                Showing
+                <span class="font-medium">{{ posts.start_index }}</span>
+                to
+                <span class="font-medium">{{ posts.end_index }}</span>
+                of
+                <span class="font-medium">{{ total_posts }}</span>
+                results
+            </p>
+            </div>
+            <div>
+            <nav class="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                {% if posts.has_previous %}
+                <a href="?page={{ posts.previous_page_number }}" class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                <span class="sr-only">Previous</span>
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" data-slot="icon">
+                    <path fill-rule="evenodd" d="M11.78 5.22a.75.75 0 0 1 0 1.06L8.06 10l3.72 3.72a.75.75 0 1 1-1.06 1.06l-4.25-4.25a.75.75 0 0 1 0-1.06l4.25-4.25a.75.75 0 0 1 1.06 0Z" clip-rule="evenodd" />
+                </svg>
+                </a>
+                {% endif %}
+                
+                <!-- Current: "z-10 bg-indigo-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600", Default: "text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:outline-offset-0" -->
+                <a href="?page=1" aria-current="page" {% if posts.number is not 1 %} 
+                class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">1</a>
+                {% else %}
+                    class="relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">1</a>
+                {% endif %}
+                {% if total_posts > 4 %}
+                    <a href="?page=2" {% if posts.number is not 2 %}
+                        class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">2</a>
+                    {% else %}
+                        class="relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">2</a>
+                    {% endif %}
+                    {% if total_posts > 8 %}
+                        <a href="?page=3" {% if posts.number is not 3 %}
+                        class="relative hidden items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 md:inline-flex">3</a>
+                        {% else %}
+                        class="relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">3</a>
+                    {% endif %}
+                        {% if total_posts > 12 %}
+                            <span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">...</span>
+                            {% if total_posts > 16 %}
+                                <a href="?page={{ posts.paginator.num_pages|sub:'2' }}" {% if posts.number is not posts.paginator.num_pages|sub:'2' %}
+                                class="relative hidden items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 md:inline-flex">{{ posts.paginator.num_pages|sub:"2" }}</a>
+                                {% else %}
+                                    class="relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">{{ posts.paginator.num_pages|sub:'2' }}</a>
+                                {% endif %}
+                                <a href="?page={{ posts.paginator.num_pages|sub:'1' }}" {% if posts.number is not posts.paginator.num_pages|sub:'1' %}
+                                class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">{{ posts.paginator.num_pages|sub:"1" }}</a>
+                                {% else %}
+                                    class="relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">{{ posts.paginator.num_pages|sub:'1' }}</a>
+                                {% endif %}
+                            {% endif %}
+                            <a href="?page={{posts.paginator.num_pages}}" {% if posts.number is not posts.paginator.num_pages %}
+                            class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">{{posts.paginator.num_pages}}</a>
+                            {% else %}
+                                class="relative z-10 inline-flex items-center bg-indigo-600 px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">{{posts.paginator.num_pages}}</a>
+                            {% endif %}
+                        {% endif %}
+                    {% endif %}
+                    
+                {% endif %}
+                {% if posts.has_next %}
+                <a href="?page={{ posts.next_page_number }}" class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0">
+                <span class="sr-only">Next</span>
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" data-slot="icon">
+                    <path fill-rule="evenodd" d="M8.22 5.22a.75.75 0 0 1 1.06 0l4.25 4.25a.75.75 0 0 1 0 1.06l-4.25 4.25a.75.75 0 0 1-1.06-1.06L11.94 10 8.22 6.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd" />
+                </svg>
+                </a>
+                {% endif %}
+            </nav>
+            </div>
+        
+    {% endif %}
 
-    <h4>Body is below:</h4>
-    {{ page.body|richtext }}
+            {% for post in posts %}
+            <ul>
+                <li>
+                    <a href = "{{ post.url }}">
+                        <article class="prose prose-2xl">{{ post }}</article>
+                        <article class="prose">{{ post.body|truncatewords:30|richtext }}</article>
+                    </a>
+                    <br>
+                    <hr>
+                </ul>
+            </li>
+            {% endfor %}
+            
+        
+        </div>
+    </div>
+</div>
 
-    <hr>
-    <hr>
-    <hr>
-
-    <h4>Blog posts are below</h4>
-    {% for blog_post in blogpages %}
-        <a href="{{ blog_post.url }}">
-            {{ blog_post.title }}
-        </a>
-        <p>{{ blog_post.subtitle }}</p>
-        <hr>
-    {% endfor %}
 
 {% endblock %}

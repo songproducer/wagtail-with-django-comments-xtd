@@ -28,8 +28,19 @@ from wagtail.contrib.routable_page.models import RoutablePageMixin, path, re_pat
 from django.http import JsonResponse
 from wagtail.templatetags.wagtailcore_tags import richtext
 
+from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from wagtail.embeds.blocks import EmbedBlock
+
+from wagtailcharts.blocks import ChartBlock
 
 class BlogIndex(RoutablePageMixin, Page):
+    blog_page = models.ForeignKey('wagtailcore.Page',
+                                  on_delete=models.PROTECT,
+                                    related_name='+'
+                                  )
+    
+
+
 
     template = 'blogpages/blog_index_page.html'
     max_count = 1
@@ -114,11 +125,40 @@ class BlogIndex(RoutablePageMixin, Page):
             'posts': list(posts.values('title', 'first_published_at'))
         })
 
-    def get_context(self, request):
-        context = super().get_context(request)
-        context['blogpages'] = BlogDetail.objects.live().public()[:5]
-        return context
+    #original
+    # def get_context(self, request):
+    #     context = super().get_context(request)
+    #     context['blogpages'] = BlogDetail.objects.live().public()[:5]
+    #     return context
 
+    def get_context(self, request, *args, **kwargs):
+
+        # Update context to include only published posts, ordered by reverse-chron
+        context = super().get_context(request, *args, **kwargs)
+        context['total_posts'] = BlogDetail.objects.live().count()
+        blogpages = self.get_children().live().public().order_by('-first_published_at')[:5]
+        context['blogpages'] = blogpages
+                # Get all posts
+        all_posts = BlogDetail.objects.live().public().order_by('-first_published_at')
+        # Paginate all posts by 4 per page
+        paginator = Paginator(all_posts, 4)
+        # Try to get the ?page=x value
+        page = request.GET.get("page")
+        try:
+            # If the page exists and the ?page=x is an int
+            posts = paginator.page(page)
+        except PageNotAnInteger:
+            # If the ?page=x is not an int; show the first page
+            posts = paginator.page(1)
+        except EmptyPage:
+            # If the ?page=x is out of range (too high most likely)
+            # Then return the last page
+            posts = paginator.page(paginator.num_pages)
+
+        # "posts" will have child pages; you'll need to use .specific in the template
+        # in order to access child properties, such as youtube_video_id and subtitle
+        context["posts"] = posts
+        return context
 
 class BlogPageTags(TaggedItemBase):
     content_object = ParentalKey(
@@ -167,6 +207,23 @@ class RichTextFieldSerializer(Field):
 
 class BlogDetail(Page):
 
+    from wagtailmodelchooser.blocks import ModelChooserBlock
+
+    def get_context(self, request):
+        context = super().get_context(request)
+        context['blog_index'] = BlogIndex.objects.first()
+        return context
+    
+    def get_absolute_url(self):
+        try:
+            site_id, site_root_url, relative_page_path = self.get_url_parts()
+            ret = relative_page_path
+        except TypeError:
+            ret = None
+        return ret
+
+    
+    template = 'blogpages/blog_detail.html'
     # Below will overwrite the `PASSWORD_REQUIRED_TEMPLATE` setting in settings/base.py
     # password_required_template = 'blogpages/password_in_here_file.html'
 
@@ -190,25 +247,32 @@ class BlogDetail(Page):
 
     intro = RichTextField(blank=True)
 
-    body = StreamField(
+    body = RichTextField(blank=True, null=True)
+    
+    COLORS = (
+        ('#fa0000', 'Red'),
+        ('#00ff00', 'Green'),
+        ('#0000ff', 'Blue'),
+    )
+
+    chart_block = ChartBlock(colors=COLORS)
+
+    stream = StreamField(
         [
+            # ('struct', blocks.StructBlock([
             ('info', custom_blocks.InfoBlock()),
+            ('richtext_content', custom_blocks.CustomRichTextBlock()),
             ('faq', custom_blocks.FAQListBlock()),
-            ('text', custom_blocks.TextBlock()),
-            ('carousel', custom_blocks.CarouselBlock()),
-            ('image', custom_blocks.ImageBlock()),
+            ('embed', EmbedBlock(max_width=800, max_height=400, required=False)),
             ('doc', DocumentChooserBlock(
-                group="Standalone blocks"
-            )),
-            ('page', custom_blocks.CustomPageChooserBlock()),
-            ('author', SnippetChooserBlock('blogpages.Author')),
-            ('call_to_action_1', custom_blocks.CallToAction1())
+                group="Standalone blocks",required=False
+                 )
+            ),
+            ('page', custom_blocks.CustomPageChooserBlock(required=False)),
+            ('chart_block', custom_blocks.ChartBlock(required=False )), #, template="blogpages/chart.html"
+        # ],
+        #   template = 'struct_block.html'),
         ],
-        block_counts={
-            'text': {'min_num': 1},
-            'image': {'max_num': 1},
-        },
-        use_json_field=True,
         blank=True,
         null=True,
     )
@@ -226,6 +290,7 @@ class BlogDetail(Page):
         FieldPanel('body'),
         FieldPanel('subtitle'),
         FieldPanel('tags'),
+        FieldPanel('stream'),
     ]
 
     api_fields = [
@@ -243,14 +308,14 @@ class BlogDetail(Page):
 
         errors = {}
 
-        if 'blog' in self.title.lower():
-            errors['title'] = "Title cannot have the word 'Blog'"
+        # if 'blog' in self.title.lower():
+        #     errors['title'] = "Title cannot have the word 'Blog'"
 
-        if 'blog' in self.subtitle.lower():
-            errors['subtitle'] = "Subtitle cannot have the word 'Blog'"
+        # if 'blog' in self.subtitle.lower():
+        #     errors['subtitle'] = "Subtitle cannot have the word 'Blog'"
 
-        if 'blog' in self.slug.lower():
-            errors['slug'] = "Slug cannot have the word 'Blog'"
+        # if 'blog' in self.slug.lower():
+        #     errors['slug'] = "Slug cannot have the word 'Blog'"
 
         if errors:
             raise ValidationError(errors)

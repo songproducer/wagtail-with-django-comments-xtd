@@ -3,11 +3,14 @@ from django.core.exceptions import ValidationError
 
 from wagtail.models import Page, Orderable
 from wagtail.admin.panels import FieldPanel, MultiFieldPanel, InlinePanel, PageChooserPanel, FieldRowPanel, HelpPanel, MultipleChooserPanel, TitleFieldPanel
-from wagtail.fields import RichTextField
+from wagtail.fields import RichTextField, StreamField
 from wagtail.images import get_image_model
 from wagtail.documents import get_document_model
 
+from wagtail.documents.blocks import DocumentChooserBlock
+from blocks import blocks as custom_blocks
 from modelcluster.fields import ParentalKey
+from wagtail.embeds.blocks import EmbedBlock
 
 
 # An Orderable is a model that can be added to another model via an InlinePanel
@@ -47,6 +50,20 @@ class HomePage(Page):
         related_name='+',
     )
 
+    stream = StreamField(
+        [
+            ('info', custom_blocks.InfoBlock()),
+            ('faq', custom_blocks.FAQListBlock()),
+            ('embed', EmbedBlock(max_width=800, max_height=400)),
+            ('doc', DocumentChooserBlock(
+                group="Standalone blocks"
+            )),
+            ('page', custom_blocks.CustomPageChooserBlock()),
+        ],
+        blank=True,
+        null=True,
+        )
+
     custom_document = models.ForeignKey(
         get_document_model(),
         blank=True,
@@ -75,7 +92,7 @@ class HomePage(Page):
         InlinePanel(
             'gallery_images',
             label="Gallery images",
-            min_num=2,
+            min_num=0,
             max_num=4,
         ),
         # Inline / Orderable Example #1
@@ -126,7 +143,8 @@ class HomePage(Page):
             heading="MultiFieldPanel Demo",
             # classname="collapsed",
             help_text='Random help text',
-        )
+        ),
+        FieldPanel('stream'),
     ]
 
     @property

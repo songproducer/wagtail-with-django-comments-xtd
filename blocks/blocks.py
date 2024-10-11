@@ -3,6 +3,19 @@ from wagtail import blocks
 from wagtail.images.blocks import ImageChooserBlock
 from wagtail.blocks import StructBlockValidationError, ListBlockValidationError
 
+class CustomRichTextBlock(blocks.StructBlock):
+    """Rich text content."""
+
+    richtext_content = blocks.RichTextBlock(required=False)
+
+    class Meta:
+        """Provide additional meta information."""
+
+        template = "custom_richtext_block.html"
+        icon = "edit"
+        label = "Custom Richtext"
+
+
 
 class TextBlock(blocks.TextBlock):
 
@@ -38,9 +51,10 @@ class InfoBlock(blocks.StaticBlock):
 
 
 class FAQBlock(blocks.StructBlock):
-    question = blocks.CharBlock()
+    question = blocks.CharBlock(required=False)
     answer = blocks.RichTextBlock(
-        features=['bold', 'italic']
+        features=['bold', 'italic'],
+        required=False
     )
 
     def clean(self, value):
@@ -72,7 +86,7 @@ class FAQListBlock(blocks.ListBlock):
         return cleaned_data
 
     class Meta:
-        min_num = 1
+        min_num = 0
         max_num = 5
         label = "Frequently Asked Questions"
         template = "blocks/faq_list_block.html"
@@ -158,3 +172,40 @@ class CustomPageChooserBlock(blocks.PageChooserBlock):
             'subtitle': value.specific.subtitle,
             'url': value.url,
         }
+
+from sre_constants import CHARSET
+
+from wagtail.blocks import (CharBlock, ChoiceBlock, RichTextBlock,
+                                 StreamBlock, StructBlock, TextBlock)
+from wagtail.embeds.blocks import EmbedBlock
+from wagtail.images.blocks import ImageChooserBlock
+from wagtailcharts.blocks import ChartBlock
+
+COLORS = (
+    ('#1f83b4', 'Blue'),
+    ('#12a2a8', 'Eastern Blue'),
+    ('#2ca030', 'Forest green'),
+    ('#78a641', 'Sushi'),
+    ('#bcbd22', 'Key Lime Pie'),
+    ('#ffbf50', 'Texas rose'),
+    ('#ffaa0e', 'Yellow sea'),
+    ('#ff7f0e', 'Flamenco'),
+    ('#d63a3a', 'Valencia'),
+    ('#c7519c', 'Mulberry'),
+    ('#ba43b4', 'Fuchsia Pink'),
+    ('#8a60b0', 'Wisteria'),
+    ('#6f63bb', 'Blue Violet'),
+)
+
+CHART_TYPES = (
+    ('bar', 'Bar chart with custom title'),
+)
+
+CHART_CONFIG_CALLBACKS = (
+    ('barchart_labels', 'Bigger font and bold labels'),
+)
+
+class ContentBlocks(StreamBlock):
+    title = CharBlock()
+    chart_block_custom = ChartBlock(label="My custom chart block", colors=COLORS, chart_types=CHART_TYPES, callbacks=CHART_CONFIG_CALLBACKS)
+    chart_block = ChartBlock()
